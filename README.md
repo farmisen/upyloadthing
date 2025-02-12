@@ -1,7 +1,9 @@
 # UpyloadThing
 [![Build Status](https://github.com/farmisen/upyloadthing/workflows/CI/badge.svg)](https://github.com/farmisen/upyloadthing/actions)
+[![PyPI version](https://badge.fury.io/py/upyloadthing.svg)](https://badge.fury.io/py/upyloadthing)
+[![Python Versions](https://img.shields.io/pypi/pyversions/upyloadthing.svg)](https://pypi.org/project/upyloadthing/)
 
-Python SDK for [UploadThing](https://uploadthing.com) - The easiest way to add file uploads to your Python application.
+Python client for the [Uploadthing API](https://docs.uploadthing.com/api-reference/openapi-spec) - The easiest way to add file uploads to your Python application.
 
 ## Installation
 

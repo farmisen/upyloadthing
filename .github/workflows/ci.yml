@@ -4,14 +4,16 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches:
+      - "**"
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -21,29 +23,32 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-
-    - name: Load cached venv
-      id: cached-poetry-dependencies
+    - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        path: |
+          ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
-    - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --with dev
+    - name: Install Poetry
+      run: |
+        curl -sSL "https://install.python-poetry.org" | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH # Add Poetry to PATH
+        poetry self add poetry-plugin-export
 
-    - name: Run Pyright
-      run: poetry run pyright
+    - name: Export dependencies to requirements.txt
+      run: poetry export --with dev -f requirements.txt --output requirements.txt --without-hashes
 
-    - name: Run Ruff
-      run: poetry run ruff check .
+    - name: Install dependencies with pip
+      run: pip install -r requirements.txt
+
+    - name: Run ruff
+      run: ruff check
+
+    - name: Run pyright
+      run: pyright
 
     - name: Run Tests
-      run: poetry run pytest
+      run: pytest
