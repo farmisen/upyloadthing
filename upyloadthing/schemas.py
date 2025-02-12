@@ -42,8 +42,12 @@ class UsageInfoResponse(BaseModel):
 
 
 class UploadResult(BaseModel):
-    ufs_url: str
+    file_key: str
+    name: str
+    size: int
+    type: str
     url: str
+    ufs_url: str
     app_url: str
     file_hash: str
     server_data: Dict | None = None
