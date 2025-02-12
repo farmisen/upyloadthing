@@ -1,0 +1,70 @@
+name: Publish & Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type (major/minor/patch)'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish_and_release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install Poetry
+      run: |
+        curl -sSL "https://install.python-poetry.org" | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+    
+    - name: Bump version
+      run: poetry version ${{ github.event.inputs.bump_type }}
+    
+    - name: Get new version
+      id: get_version
+      run: echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
+    
+    - name: Build package
+      run: poetry build
+    
+    - name: Publish to PyPI
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+      run: poetry publish
+    
+    - name: Commit changes
+      run: |
+        git config --global user.name 'Fabrice Armisen'
+        git config --global user.email 'farmisen@gmail.com'
+        git add pyproject.toml
+        git commit -m "Release v${{ steps.get_version.outputs.new_version }}"
+        git tag "v${{ steps.get_version.outputs.new_version }}"
+        git push
+        git push --tags
+    
+    - name: Create Release
+      uses: elgohr/Github-Release-Action@v5
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        title: "v${{ steps.get_version.outputs.new_version }}"
+        tag: "v${{ steps.get_version.outputs.new_version }}"
