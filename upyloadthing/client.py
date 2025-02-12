@@ -202,7 +202,15 @@ class UTApi:
                     )
                 },
             )
-            results.append(UploadResult(**result))
+
+            upload_result = UploadResult(
+                file_key=file_data["file_key"],
+                name=file_data["name"],
+                size=file_data["size"],
+                type=file_data["type"],
+                **result,
+            )
+            results.append(upload_result)
 
         return results[0] if len(results) == 1 else results
 

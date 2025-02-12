@@ -1,9 +1,10 @@
-# UpyloadThing
+# Upyloadthing
+
 [![Build Status](https://github.com/farmisen/upyloadthing/workflows/CI/badge.svg)](https://github.com/farmisen/upyloadthing/actions)
 [![PyPI version](https://badge.fury.io/py/upyloadthing.svg)](https://badge.fury.io/py/upyloadthing)
 [![Python Versions](https://img.shields.io/pypi/pyversions/upyloadthing.svg)](https://pypi.org/project/upyloadthing/)
 
-Python client for the [Uploadthing API](https://docs.uploadthing.com/api-reference/openapi-spec) - The easiest way to add file uploads to your Python application.
+Python client for the [uploadthing](https://docs.uploadthing.com/api-reference/openapi-spec) API - The easiest way to add file uploads to your Python application.
 
 ## Installation
 
@@ -29,7 +30,7 @@ with open("example.png", "rb") as f:
 
 The SDK can be configured using environment variables:
 
-- `UPLOADTHING_TOKEN` - Your UploadThing API token (required if not passed to UTApiOptions)
+- `UPLOADTHING_TOKEN` - Your uploadthing API token (required if not passed to UTApiOptions)
 - `UPLOADTHING_REGION` - Preferred upload region (optional, defaults to first available region found in the decoded token)
 
 ## Examples
@@ -102,6 +103,7 @@ except Exception as e:
 ### UTApi Methods
 
 All methods are defined in [`upyloadthing/client.py`](upyloadthing/client.py):
+
 - `upload_files(files)` - Upload one or more files
 - `delete_files(keys, key_type='file_key')` - Delete files by key or custom ID
 - `list_files(limit=None, offset=None)` - List uploaded files
@@ -110,6 +112,7 @@ All methods are defined in [`upyloadthing/client.py`](upyloadthing/client.py):
 ### Response Models
 
 All response models are defined in [`upyloadthing/schemas.py`](upyloadthing/schemas.py):
+
 - `UploadResult` - File upload result containing:
   - `ufs_url: str`
   - `url: str`

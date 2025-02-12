@@ -36,12 +36,11 @@ def main():
     upload_result: UploadResult = api.upload_files(
         image_file, acl="public-read"
     )  # type: ignore
-    file_key = upload_result.url.split("/")[-1]
     print(f"File uploaded with result: {upload_result}\n")
 
     # Delete the uploaded file
     print("🗑️ Deleting test file...")
-    delete_result = api.delete_files(file_key)
+    delete_result = api.delete_files(upload_result.file_key)
     print(f"Deleted {delete_result.deleted_count} file(s)")
     print(f"Success: {delete_result.success}\n")
 

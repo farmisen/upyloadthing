@@ -84,7 +84,14 @@ def test_upload_files(responses, ut_api, mock_file):
 
     result = ut_api.upload_files(mock_file)
 
+    # Verify result is correct type
     assert isinstance(result, UploadResult)
+
+    # Verify all fields
+    assert result.file_key is not None  # Generated dynamically
+    assert result.name == "test.jpg"
+    assert result.size == len(b"test content")
+    assert result.type == "image/jpeg"
     assert result.file_hash == "dae427dff5fa285fc87a791dc8b7daf1"
     assert (
         result.url
@@ -98,6 +105,7 @@ def test_upload_files(responses, ut_api, mock_file):
         result.app_url
         == "https://utfs.io/a/lhdsot44oz/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg="
     )
+    assert result.server_data is None  # Default value from schema
 
 
 def test_upload_multiple_files(responses, ut_api):
