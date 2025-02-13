@@ -1,26 +1,27 @@
+import asyncio
 from io import BytesIO
 from typing import List
 
-from upyloadthing.client import UTApi
+from upyloadthing.async_client import AsyncUTApi
 from upyloadthing.schemas import UploadResult
 
 
-def main():
-    print("🚀 UploadThing API Demo\n")
+async def main():
+    print("🚀 UploadThing API Demo (Async)\n")
 
     # Initialize the client
-    api = UTApi()
+    api = AsyncUTApi()
 
     # Get usage info
     print("📊 Getting usage info...")
-    usage_info = api.get_usage_info()
+    usage_info = await api.get_usage_info()
     print(f"Total bytes used: {usage_info.total_bytes}")
     print(f"Files uploaded: {usage_info.files_uploaded}")
     print(f"Storage limit: {usage_info.limit_bytes}\n")
 
     # List files
     print("📋 Listing files...")
-    file_list = api.list_files(limit=5)
+    file_list = await api.list_files(limit=5)
     print(
         f"Fetched {len(file_list.files)} files, has more: {file_list.has_more}"
     )
@@ -44,7 +45,7 @@ def main():
     jpeg_file.name = "test.jpg"
 
     # Upload both files
-    upload_results: List[UploadResult] = api.upload_files(
+    upload_results: List[UploadResult] = await api.upload_files(
         [png_file, jpeg_file], acl="public-read"
     )
 
@@ -56,10 +57,10 @@ def main():
     # Delete the uploaded files
     print("🗑️ Deleting test files...")
     file_keys = [result.file_key for result in upload_results]
-    delete_result = api.delete_files(file_keys)
+    delete_result = await api.delete_files(file_keys)
     print(f"Deleted {delete_result.deleted_count} file(s)")
     print(f"Success: {delete_result.success}\n")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

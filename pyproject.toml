@@ -27,6 +27,7 @@ pyright = "^1.1.393"
 ptpython = "^3.0.29"
 pytest = "^8.3.4"
 respx = "^0.22.0"
+pytest-asyncio = "^0.23.2"
 
 [tool.ruff]
 line-length = 79
