@@ -5,7 +5,7 @@ import os
 import uuid
 from typing import BinaryIO, List
 
-import requests
+import httpx
 
 from upyloadthing.file_key import generate_key
 from upyloadthing.presign import make_presigned_url
@@ -91,7 +91,7 @@ class UTApi:
             dict: JSON response from the API, converted to snake_case
 
         Raises:
-            requests.exceptions.RequestException: If the HTTP request fails
+            httpx.HTTPError: If the HTTP request fails
         """
         if path.startswith("/"):
             url = f"{self.api_url}{path}"
@@ -113,21 +113,22 @@ class UTApi:
             )
 
         # Make the request based on the content type
-        if data is None:
-            response = requests.request(
-                method=method, url=url, headers=headers
-            )
-        elif has_files:
-            response = requests.request(
-                method=method, url=url, headers=headers, files=data
-            )
-        else:
-            response = requests.request(
-                method=method, url=url, headers=headers, json=data
-            )
+        with httpx.Client() as client:
+            if data is None:
+                response = client.request(
+                    method=method, url=url, headers=headers
+                )
+            elif has_files:
+                response = client.request(
+                    method=method, url=url, headers=headers, files=data
+                )
+            else:
+                response = client.request(
+                    method=method, url=url, headers=headers, json=data
+                )
 
-        response.raise_for_status()
-        return snakify(response.json())
+            response.raise_for_status()
+            return snakify(response.json())
 
     def upload_files(
         self,
