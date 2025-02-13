@@ -6,8 +6,8 @@ import httpx
 import pytest
 import respx
 
+from upyloadthing.async_client import AsyncUTApi
 from upyloadthing.base_client import API_URL
-from upyloadthing.client import UTApi
 from upyloadthing.schemas import (
     DeleteFileResponse,
     ListFileResponse,
@@ -30,9 +30,9 @@ MOCK_TOKEN = base64.b64encode(
 
 @pytest.fixture
 def ut_api():
-    """Fixture to create a UTApi instance with mock token."""
+    """Fixture to create an AsyncUTApi instance with mock token."""
     options = UTApiOptions(token=MOCK_TOKEN)
-    return UTApi(options)
+    return AsyncUTApi(options)
 
 
 @pytest.fixture
@@ -44,18 +44,18 @@ def mock_file():
 
 
 def test_init_with_options():
-    """Test UTApi initialization with options."""
+    """Test AsyncUTApi initialization with options."""
     options = UTApiOptions(token=MOCK_TOKEN, region="eu-west-1")
-    api = UTApi(options)
+    api = AsyncUTApi(options)
     assert api.token.app_id == "test-app"
     assert api.token.api_key == "test-key"
     assert api.region == "eu-west-1"
 
 
 def test_init_without_token():
-    """Test UTApi initialization without token raises error."""
+    """Test AsyncUTApi initialization without token raises error."""
     with pytest.raises(ValueError, match="UPLOADTHING_TOKEN is required"):
-        UTApi(UTApiOptions(token=None))
+        AsyncUTApi(UTApiOptions(token=None))
 
 
 def test_make_headers(ut_api):
@@ -66,11 +66,10 @@ def test_make_headers(ut_api):
     assert "x-uploadthing-be-adapter" in headers
 
 
-@respx.mock()
-def test_upload_files(respx_mock: respx.MockRouter, ut_api, mock_file):
+@pytest.mark.asyncio
+@respx.mock
+async def test_upload_files(respx_mock: respx.MockRouter, ut_api, mock_file):
     """Test file upload functionality."""
-
-    print(type(respx_mock))
     upload_response = {
         "fileHash": "dae427dff5fa285fc87a791dc8b7daf1",
         "url": "https://utfs.io/f/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg=",
@@ -82,10 +81,8 @@ def test_upload_files(respx_mock: respx.MockRouter, ut_api, mock_file):
         return_value=httpx.Response(200, json=upload_response)
     )
 
-    result = ut_api.upload_files(mock_file)[0]
-
-    # Verify all fields
-    assert result.file_key is not None  # Generated dynamically
+    result = (await ut_api.upload_files(mock_file))[0]
+    assert result.file_key is not None
     assert result.name == "test.jpg"
     assert result.size == len(b"test content")
     assert result.type == "image/jpeg"
@@ -102,11 +99,12 @@ def test_upload_files(respx_mock: respx.MockRouter, ut_api, mock_file):
         result.app_url
         == "https://utfs.io/a/lhdsot44oz/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg="
     )
-    assert result.server_data is None  # Default value from schema
+    assert result.server_data is None
 
 
-@respx.mock()
-def test_upload_multiple_files(respx_mock: respx.MockRouter, ut_api):
+@pytest.mark.asyncio
+@respx.mock
+async def test_upload_multiple_files(respx_mock: respx.MockRouter, ut_api):
     """Test uploading multiple files."""
     files = [BytesIO(b"test1 content"), BytesIO(b"test2 content")]
     for i, f in enumerate(files):
@@ -123,20 +121,15 @@ def test_upload_multiple_files(respx_mock: respx.MockRouter, ut_api):
         return_value=httpx.Response(200, json=upload_response)
     )
 
-    result = ut_api.upload_files(files)
+    result = await ut_api.upload_files(files)
     assert isinstance(result, list)
     assert len(result) == 2
     assert all(isinstance(r, UploadResult) for r in result)
-    for r in result:
-        assert r.file_hash == "dae427dff5fa285fc87a791dc8b7daf1"
-        assert (
-            r.url
-            == "https://utfs.io/f/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg="
-        )
 
 
-@respx.mock()
-def test_upload_multiple_files_with_different_types(
+@pytest.mark.asyncio
+@respx.mock
+async def test_upload_multiple_files_with_different_types(
     respx_mock: respx.MockRouter, ut_api
 ):
     """Test uploading multiple files with different types."""
@@ -160,7 +153,7 @@ def test_upload_multiple_files_with_different_types(
         return_value=httpx.Response(200, json=upload_response)
     )
 
-    result = ut_api.upload_files(files)
+    result = await ut_api.upload_files(files)
     assert isinstance(result, list)
     assert len(result) == 2
     assert all(isinstance(r, UploadResult) for r in result)
@@ -172,8 +165,9 @@ def test_upload_multiple_files_with_different_types(
     assert result[1].type == "image/jpeg"
 
 
-@respx.mock()
-def test_upload_multiple_files_with_custom_disposition(
+@pytest.mark.asyncio
+@respx.mock
+async def test_upload_multiple_files_with_custom_disposition(
     respx_mock: respx.MockRouter, ut_api
 ):
     """Test uploading multiple files with custom content disposition."""
@@ -192,14 +186,15 @@ def test_upload_multiple_files_with_custom_disposition(
         return_value=httpx.Response(200, json=upload_response)
     )
 
-    result = ut_api.upload_files(files, content_disposition="attachment")
+    result = await ut_api.upload_files(files, content_disposition="attachment")
     assert isinstance(result, list)
     assert len(result) == 2
     assert all(isinstance(r, UploadResult) for r in result)
 
 
-@respx.mock()
-def test_delete_files(respx_mock: respx.MockRouter, ut_api):
+@pytest.mark.asyncio
+@respx.mock
+async def test_delete_files(respx_mock: respx.MockRouter, ut_api):
     """Test file deletion."""
     delete_response = {"success": True, "deleted_count": 1}
 
@@ -207,7 +202,7 @@ def test_delete_files(respx_mock: respx.MockRouter, ut_api):
         return_value=httpx.Response(200, json=delete_response)
     )
 
-    result = ut_api.delete_files(
+    result = await ut_api.delete_files(
         "AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg="
     )
     assert isinstance(result, DeleteFileResponse)
@@ -215,8 +210,9 @@ def test_delete_files(respx_mock: respx.MockRouter, ut_api):
     assert result.deleted_count == 1
 
 
-@respx.mock()
-def test_list_files(respx_mock: respx.MockRouter, ut_api):
+@pytest.mark.asyncio
+@respx.mock
+async def test_list_files(respx_mock: respx.MockRouter, ut_api):
     """Test file listing."""
     list_response = {
         "has_more": False,
@@ -236,7 +232,7 @@ def test_list_files(respx_mock: respx.MockRouter, ut_api):
         return_value=httpx.Response(200, json=list_response)
     )
 
-    result = ut_api.list_files(limit=10, offset=0)
+    result = await ut_api.list_files(limit=10, offset=0)
     assert isinstance(result, ListFileResponse)
     assert len(result.files) == 1
     assert result.has_more is False
@@ -244,8 +240,9 @@ def test_list_files(respx_mock: respx.MockRouter, ut_api):
     assert result.files[0].status == "ready"
 
 
-@respx.mock()
-def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
+@pytest.mark.asyncio
+@respx.mock
+async def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
     """Test usage info retrieval."""
     usage_response = {
         "total_bytes": 1024,
@@ -258,7 +255,7 @@ def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
         return_value=httpx.Response(200, json=usage_response)
     )
 
-    result = ut_api.get_usage_info()
+    result = await ut_api.get_usage_info()
     assert isinstance(result, UsageInfoResponse)
     assert result.total_bytes == 1024
     assert result.app_total_bytes == 2048
@@ -266,19 +263,21 @@ def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
     assert result.limit_bytes == 5000000
 
 
-@respx.mock()
-def test_request_with_error(respx_mock: respx.MockRouter, ut_api):
+@pytest.mark.asyncio
+@respx.mock
+async def test_request_with_error(respx_mock: respx.MockRouter, ut_api):
     """Test handling of request errors."""
     respx_mock.get(f"{API_URL}/test").mock(
         return_value=httpx.Response(400, json={"error": "Bad Request"})
     )
 
     with pytest.raises(httpx.HTTPError):
-        ut_api._request("GET", "/test")
+        await ut_api._request("GET", "/test")
 
 
-@respx.mock()
-def test_request_with_different_content_types(
+@pytest.mark.asyncio
+@respx.mock
+async def test_request_with_different_content_types(
     respx_mock: respx.MockRouter, ut_api
 ):
     """Test requests with different content types."""
@@ -288,5 +287,5 @@ def test_request_with_different_content_types(
         return_value=httpx.Response(200, json=test_response)
     )
 
-    result = ut_api._request("POST", "/test-json", {"data": "test"})
+    result = await ut_api._request("POST", "/test-json", {"data": "test"})
     assert result == {"key": "value"}

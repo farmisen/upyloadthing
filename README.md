@@ -100,22 +100,57 @@ except Exception as e:
 
 ## API Reference
 
-### UTApi Methods
+### Client Classes
 
-All methods are defined in [`upyloadthing/client.py`](upyloadthing/client.py):
+Both clients provide the same methods with identical parameters, but different execution patterns:
 
-- `upload_files(files)` - Upload one or more files
-- `delete_files(keys, key_type='file_key')` - Delete files by key or custom ID
-- `list_files(limit=None, offset=None)` - List uploaded files
-- `get_usage_info()` - Get account usage statistics
+#### UTApi (Synchronous)
+```python
+from upyloadthing import UTApi
+
+api = UTApi(UTApiOptions(token="your-token"))
+result = api.upload_files(file)
+```
+
+#### AsyncUTApi (Asynchronous)
+```python
+from upyloadthing import AsyncUTApi
+
+api = AsyncUTApi(UTApiOptions(token="your-token"))
+result = await api.upload_files(file)
+```
+
+### Methods
+
+Both clients provide these methods:
+
+- `upload_files(files: BinaryIO | List[BinaryIO], content_disposition: str = "inline", acl: str | None = "public-read") -> List[UploadResult]`
+  - Upload one or more files
+  - Returns list of upload results
+
+- `delete_files(keys: str | List[str], key_type: str = "file_key") -> DeleteFileResponse`
+  - Delete one or more files by key or custom ID
+  - Returns deletion result
+
+- `list_files(limit: int | None = None, offset: int | None = None) -> ListFileResponse`
+  - List uploaded files with optional pagination
+  - Returns file listing
+
+- `get_usage_info() -> UsageInfoResponse`
+  - Get account usage statistics
+  - Returns usage information
 
 ### Response Models
 
-All response models are defined in [`upyloadthing/schemas.py`](upyloadthing/schemas.py):
+All response models are defined in `upyloadthing/schemas.py`:
 
 - `UploadResult` - File upload result containing:
-  - `ufs_url: str`
+  - `file_key: str`
+  - `name: str`
+  - `size: int`
+  - `type: str`
   - `url: str`
+  - `ufs_url: str`
   - `app_url: str`
   - `file_hash: str`
   - `server_data: Dict | None`

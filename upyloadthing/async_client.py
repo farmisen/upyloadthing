@@ -1,3 +1,4 @@
+import asyncio
 from typing import BinaryIO, List
 
 import httpx
@@ -12,21 +13,21 @@ from upyloadthing.schemas import (
 from upyloadthing.utils import snakify
 
 
-class UTApi(BaseUTApi):
-    """Synchronous UploadThing API client.
+class AsyncUTApi(BaseUTApi):
+    """Asynchronous UploadThing API client.
 
-    This class provides synchronous methods for interacting with the
-    UploadThing API. Use this client for standard synchronous operations.
+    This class provides asynchronous methods for interacting with the
+    UploadThing API. Use this client for async/await operations.
     """
 
-    def _request(
+    async def _request(
         self,
         method: str,
         path: str,
         data: dict | None = None,
         timeout: float = 30.0,
     ) -> dict:
-        """Make an HTTP request to the UploadThing API.
+        """Make an async HTTP request to the UploadThing API.
 
         Args:
             method: HTTP method to use
@@ -48,8 +49,8 @@ class UTApi(BaseUTApi):
         request_kwargs.update({"timeout": timeout})
 
         try:
-            with httpx.Client() as client:
-                response = client.request(
+            async with httpx.AsyncClient() as client:
+                response = await client.request(
                     method=method, url=url, headers=headers, **request_kwargs
                 )
                 response.raise_for_status()
@@ -65,13 +66,42 @@ class UTApi(BaseUTApi):
             self._handle_error_response(e)
             raise  # This ensures we always return or raise
 
-    def upload_files(
+    async def _upload_single_file(self, file_data: dict) -> UploadResult:
+        """Upload a single file to UploadThing.
+
+        Args:
+            file_data: Dictionary containing file metadata and content
+
+        Returns:
+            UploadResult: Result of the upload operation
+        """
+        result = await self._request(
+            "PUT",
+            file_data["ingest_url"],
+            data={
+                "file": (
+                    file_data["name"],
+                    file_data["file"],
+                    file_data["type"],
+                )
+            },
+        )
+
+        return UploadResult(
+            file_key=file_data["file_key"],
+            name=file_data["name"],
+            size=file_data["size"],
+            type=file_data["type"],
+            **result,
+        )
+
+    async def upload_files(
         self,
         files: BinaryIO | List[BinaryIO],
         content_disposition: str = "inline",
         acl: str | None = "public-read",
     ) -> List[UploadResult]:
-        """Upload one or more files to UploadThing synchronously.
+        """Upload one or more files to UploadThing asynchronously.
 
         Args:
             files: Single file or list of files to upload (file-like objects)
@@ -89,35 +119,17 @@ class UTApi(BaseUTApi):
             for file in files
         ]
 
-        results = []
-        for file_data in files_data:
-            result = self._request(
-                "PUT",
-                file_data["ingest_url"],
-                {
-                    "file": (
-                        file_data["name"],
-                        file_data["file"],
-                        file_data["type"],
-                    )
-                },
-            )
-
-            upload_result = UploadResult(
-                file_key=file_data["file_key"],
-                name=file_data["name"],
-                size=file_data["size"],
-                type=file_data["type"],
-                **result,
-            )
-            results.append(upload_result)
+        # Upload all files in parallel
+        results = await asyncio.gather(
+            *[self._upload_single_file(file_data) for file_data in files_data]
+        )
 
         return results
 
-    def delete_files(
+    async def delete_files(
         self, keys: str | List[str], key_type: str | None = "file_key"
     ) -> DeleteFileResponse:
-        """Delete one or more files from UploadThing synchronously.
+        """Delete one or more files from UploadThing asynchronously.
 
         Args:
             keys: Single key or list of keys identifying files to delete
@@ -130,13 +142,13 @@ class UTApi(BaseUTApi):
         data = {
             "fileKeys" if key_type == "file_key" else "customIds": keys_list
         }
-        result = self._request("POST", "/v6/deleteFiles", data)
+        result = await self._request("POST", "/v6/deleteFiles", data)
         return DeleteFileResponse(**result)
 
-    def list_files(
+    async def list_files(
         self, limit: int | None = None, offset: int | None = None
     ) -> ListFileResponse:
-        """List files stored in UploadThing synchronously.
+        """List files stored in UploadThing asynchronously.
 
         Args:
             limit: Maximum number of files to return
@@ -151,14 +163,14 @@ class UTApi(BaseUTApi):
         if offset:
             params["offset"] = offset
 
-        response = self._request("POST", "/v6/listFiles", params)
+        response = await self._request("POST", "/v6/listFiles", params)
         return ListFileResponse(**response)
 
-    def get_usage_info(self) -> UsageInfoResponse:
-        """Get usage information for the UploadThing account synchronously.
+    async def get_usage_info(self) -> UsageInfoResponse:
+        """Get usage information for the UploadThing account asynchronously.
 
         Returns:
             UsageInfoResponse: Response containing usage statistics
         """
-        result = self._request("POST", "/v6/getUsageInfo")
+        result = await self._request("POST", "/v6/getUsageInfo")
         return UsageInfoResponse(**result)
