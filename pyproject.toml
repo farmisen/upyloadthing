@@ -10,11 +10,10 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
     "setuptools (>=75.8.0,<76.0.0)",
-    "requests (>=2.32.3,<3.0.0)",
     "pydantic (>=2.10.6,<3.0.0)",
     "sqids (>=0.5.1,<0.6.0)",
-    "requests-toolbelt (>=1.0.0,<2.0.0)",
-    "inflection (>=0.5.1,<0.6.0)"
+    "inflection (>=0.5.1,<0.6.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
 
 
@@ -27,8 +26,7 @@ ruff = "^0.9.6"
 pyright = "^1.1.393"
 ptpython = "^3.0.29"
 pytest = "^8.3.4"
-responses = "^0.25.6"
-pytest-responses = "^0.5.1"
+respx = "^0.22.0"
 
 [tool.ruff]
 line-length = 79

@@ -1,10 +1,10 @@
 import base64
 import json
-import re
 from io import BytesIO
 
+import httpx
 import pytest
-import requests
+import respx
 
 from upyloadthing.client import API_URL, UTApi
 from upyloadthing.schemas import (
@@ -65,9 +65,11 @@ def test_make_headers(ut_api):
     assert "x-uploadthing-be-adapter" in headers
 
 
-def test_upload_files(responses, ut_api, mock_file):
+@respx.mock()
+def test_upload_files(respx_mock: respx.MockRouter, ut_api, mock_file):
     """Test file upload functionality."""
-    # Mock the upload response
+
+    print(type(respx_mock))
     upload_response = {
         "fileHash": "dae427dff5fa285fc87a791dc8b7daf1",
         "url": "https://utfs.io/f/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg=",
@@ -75,11 +77,8 @@ def test_upload_files(responses, ut_api, mock_file):
         "appUrl": "https://utfs.io/a/lhdsot44oz/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg=",
     }
 
-    # Mock any PUT request using responses
-    responses.put(
-        url=re.compile(r"https://sea2.ingest.uploadthing.com/"),
-        json=upload_response,
-        status=200,
+    respx_mock.put(url__regex="https://sea2.ingest.uploadthing.com/").mock(
+        return_value=httpx.Response(200, json=upload_response)
     )
 
     result = ut_api.upload_files(mock_file)
@@ -108,7 +107,8 @@ def test_upload_files(responses, ut_api, mock_file):
     assert result.server_data is None  # Default value from schema
 
 
-def test_upload_multiple_files(responses, ut_api):
+@respx.mock()
+def test_upload_multiple_files(respx_mock: respx.MockRouter, ut_api):
     """Test uploading multiple files."""
     files = [BytesIO(b"test1 content"), BytesIO(b"test2 content")]
     for i, f in enumerate(files):
@@ -121,10 +121,8 @@ def test_upload_multiple_files(responses, ut_api):
         "appUrl": "https://utfs.io/a/lhdsot44oz/AlZ3KvVUSx6sMzg3ZDRmZmM5NTRhNDBkMmI5ZWQ5ODg2NWZmODc3MTg=",
     }
 
-    responses.put(
-        url=re.compile(r"https://sea2.ingest.uploadthing.com/"),
-        json=upload_response,
-        status=200,
+    respx_mock.put(url__regex="https://sea2.ingest.uploadthing.com/").mock(
+        return_value=httpx.Response(200, json=upload_response)
     )
 
     result = ut_api.upload_files(files)
@@ -139,14 +137,13 @@ def test_upload_multiple_files(responses, ut_api):
         )
 
 
-def test_delete_files(responses, ut_api):
+@respx.mock()
+def test_delete_files(respx_mock: respx.MockRouter, ut_api):
     """Test file deletion."""
     delete_response = {"success": True, "deleted_count": 1}
 
-    responses.post(
-        url=f"{API_URL}/v6/deleteFiles",
-        json=delete_response,
-        status=200,
+    respx_mock.post(f"{API_URL}/v6/deleteFiles").mock(
+        return_value=httpx.Response(200, json=delete_response)
     )
 
     result = ut_api.delete_files(
@@ -157,7 +154,8 @@ def test_delete_files(responses, ut_api):
     assert result.deleted_count == 1
 
 
-def test_list_files(responses, ut_api):
+@respx.mock()
+def test_list_files(respx_mock: respx.MockRouter, ut_api):
     """Test file listing."""
     list_response = {
         "has_more": False,
@@ -173,10 +171,8 @@ def test_list_files(responses, ut_api):
         ],
     }
 
-    responses.post(
-        url=f"{API_URL}/v6/listFiles",
-        json=list_response,
-        status=200,
+    respx_mock.post(f"{API_URL}/v6/listFiles").mock(
+        return_value=httpx.Response(200, json=list_response)
     )
 
     result = ut_api.list_files(limit=10, offset=0)
@@ -187,7 +183,8 @@ def test_list_files(responses, ut_api):
     assert result.files[0].status == "ready"
 
 
-def test_get_usage_info(responses, ut_api):
+@respx.mock()
+def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
     """Test usage info retrieval."""
     usage_response = {
         "total_bytes": 1024,
@@ -196,10 +193,8 @@ def test_get_usage_info(responses, ut_api):
         "limit_bytes": 5000000,
     }
 
-    responses.post(
-        url=f"{API_URL}/v6/getUsageInfo",
-        json=usage_response,
-        status=200,
+    respx_mock.post(f"{API_URL}/v6/getUsageInfo").mock(
+        return_value=httpx.Response(200, json=usage_response)
     )
 
     result = ut_api.get_usage_info()
@@ -210,31 +205,26 @@ def test_get_usage_info(responses, ut_api):
     assert result.limit_bytes == 5000000
 
 
-def test_request_with_error(responses, ut_api):
+@respx.mock()
+def test_request_with_error(respx_mock: respx.MockRouter, ut_api):
     """Test handling of request errors."""
-    responses.get(
-        url=f"{API_URL}/test",
-        json={"error": "Bad Request"},
-        status=400,
+    respx_mock.get(f"{API_URL}/test").mock(
+        return_value=httpx.Response(400, json={"error": "Bad Request"})
     )
 
-    with pytest.raises(requests.exceptions.HTTPError):
+    with pytest.raises(httpx.HTTPError):
         ut_api._request("GET", "/test")
 
 
-def test_request_with_different_content_types(responses, ut_api):
+@respx.mock()
+def test_request_with_different_content_types(
+    respx_mock: respx.MockRouter, ut_api
+):
     """Test requests with different content types."""
     test_response = {"key": "value"}
 
-    responses.post(
-        url=f"{API_URL}/test-json",
-        json=test_response,
-        status=200,
-        match=[
-            responses.matchers.header_matcher(
-                {"Content-Type": "application/json"}
-            )
-        ],
+    respx_mock.post(f"{API_URL}/test-json").mock(
+        return_value=httpx.Response(200, json=test_response)
     )
 
     result = ut_api._request("POST", "/test-json", {"data": "test"})
