@@ -2,8 +2,7 @@ import asyncio
 from io import BytesIO
 from typing import List
 
-from upyloadthing.async_client import AsyncUTApi
-from upyloadthing.schemas import UploadResult
+from upyloadthing import AsyncUTApi, UploadResult
 
 
 async def main():
