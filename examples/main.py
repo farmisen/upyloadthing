@@ -1,8 +1,7 @@
 from io import BytesIO
 from typing import List
 
-from upyloadthing.client import UTApi
-from upyloadthing.schemas import UploadResult
+from upyloadthing import UploadResult, UTApi
 
 
 def main():

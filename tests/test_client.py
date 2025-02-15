@@ -6,15 +6,15 @@ import httpx
 import pytest
 import respx
 
-from upyloadthing.base_client import API_URL
-from upyloadthing.client import UTApi
-from upyloadthing.schemas import (
+from upyloadthing import (
     DeleteFileResponse,
     ListFileResponse,
     UploadResult,
     UsageInfoResponse,
+    UTApi,
     UTApiOptions,
 )
+from upyloadthing.base_client import API_URL
 
 # Test data
 MOCK_TOKEN = base64.b64encode(
