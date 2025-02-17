@@ -17,16 +17,6 @@ def main():
     print(f"Files uploaded: {usage_info.files_uploaded}")
     print(f"Storage limit: {usage_info.limit_bytes}\n")
 
-    # List files
-    print("📋 Listing files...")
-    file_list = api.list_files(limit=5)
-    print(
-        f"Fetched {len(file_list.files)} files, has more: {file_list.has_more}"
-    )
-    for file in file_list.files:
-        print(file)
-    print()
-
     # Prepare test files
     print("📤 Uploading test images...")
 
@@ -50,6 +40,34 @@ def main():
     print("Upload results:")
     for result in upload_results:
         print(f"- {result.name}: {result.file_key}")
+    print()
+
+    # Add rename test
+    print("✏️ Renaming test files...")
+    rename_updates = [
+        {"fileKey": upload_results[0].file_key, "newName": "renamed_test.png"},
+        {"fileKey": upload_results[1].file_key, "newName": "renamed_test.jpg"},
+    ]
+    rename_result = api.rename_files(rename_updates)
+    print(f"Renamed {len(rename_updates)} files")
+    print(f"Success: {rename_result.success}\n")
+
+    # Verify renamed files
+    print("📋 Verifying renamed files...")
+    updated_files = api.list_files(limit=5)
+    print("Current files:")
+    for file in updated_files.files:
+        print(f"- {file.name}: {file.key}")
+
+    # Verify the new names match what we expected
+    expected_names = {"renamed_test.png", "renamed_test.jpg"}
+    actual_names = {file.name for file in updated_files.files}
+    if expected_names.issubset(actual_names):
+        print("✅ Files were renamed successfully!")
+    else:
+        print("❌ Files were not renamed as expected!")
+        print(f"Expected to find: {expected_names}")
+        print(f"Found: {actual_names}")
     print()
 
     # Delete the uploaded files

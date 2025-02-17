@@ -9,6 +9,7 @@ import respx
 from upyloadthing import (
     DeleteFileResponse,
     ListFileResponse,
+    RenameFilesResponse,
     UploadResult,
     UsageInfoResponse,
     UTApi,
@@ -264,6 +265,63 @@ def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
     assert result.app_total_bytes == 2048
     assert result.files_uploaded == 10
     assert result.limit_bytes == 5000000
+
+
+@respx.mock()
+def test_rename_files(respx_mock: respx.MockRouter, ut_api):
+    """Test renaming files with new names."""
+    rename_response = {"success": True, "renamed_count": 2}
+
+    respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
+        return_value=httpx.Response(200, json=rename_response)
+    )
+
+    updates = [
+        {"fileKey": "file_key_1", "newName": "renamed1.jpg"},
+        {"fileKey": "file_key_2", "newName": "renamed2.png"},
+    ]
+
+    result = ut_api.rename_files(updates)
+    assert isinstance(result, RenameFilesResponse)
+    assert result.success is True
+
+
+@respx.mock()
+def test_rename_files_with_custom_id(respx_mock: respx.MockRouter, ut_api):
+    """Test renaming files with custom IDs."""
+    rename_response = {"success": True, "renamed_count": 2}
+
+    respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
+        return_value=httpx.Response(200, json=rename_response)
+    )
+
+    updates = [
+        {"customId": "custom_123", "newName": "new_name.jpg"},
+        {"customId": "custom_456", "newName": "other_name.png"},
+    ]
+
+    result = ut_api.rename_files(updates)
+    assert isinstance(result, RenameFilesResponse)
+    assert result.success is True
+
+
+@respx.mock()
+def test_rename_files_mixed_updates(respx_mock: respx.MockRouter, ut_api):
+    """Test renaming files with mixed update types (both new names and custom IDs)."""  # noqa: E501
+    rename_response = {"success": True, "renamed_count": 2}
+
+    respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
+        return_value=httpx.Response(200, json=rename_response)
+    )
+
+    updates = [
+        {"fileKey": "file_key_123", "newName": "new_name.jpg"},
+        {"customId": "custom_456", "newName": "other_name.png"},
+    ]
+
+    result = ut_api.rename_files(updates)
+    assert isinstance(result, RenameFilesResponse)
+    assert result.success is True
 
 
 @respx.mock()
