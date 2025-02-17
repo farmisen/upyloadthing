@@ -34,6 +34,11 @@ class DeleteFileResponse(BaseModel):
     deleted_count: int
 
 
+class RenameFilesResponse(BaseModel):
+    success: bool
+    renamed_count: int
+
+
 class UsageInfoResponse(BaseModel):
     total_bytes: int
     app_total_bytes: int

@@ -60,6 +60,28 @@ response = api.delete_files(["key1", "key2"])
 response = api.delete_files("custom_123", key_type="custom_id")
 ```
 
+### Rename Files
+
+```python
+# Rename files using new names
+response = api.rename_files([
+    {"fileKey": "file_key_123", "newName": "new_name.jpg"},
+    {"fileKey": "file_key_456", "newName": "other_name.png"}
+])
+
+# Update files with custom IDs
+response = api.rename_files([
+    {"customId": "custom_123", "newName": "new_name.jpg"},
+    {"customId": "custom_456", "newName": "other_name.png"}
+])
+
+# Mix of new names and custom IDs
+response = api.rename_files([
+    {"fileKey": "file_key_123", "newName": "new_name.jpg"},
+    {"customId": "custom_456", "newName": "other_name.png"}
+])
+```
+
 ### List Files
 
 ```python
@@ -136,6 +158,13 @@ Both clients provide these methods:
   - List uploaded files with optional pagination
   - Returns file listing
 
+- `rename_files(updates: List[dict[str, str]]) -> RenameFilesResponse`  
+  - Rename files or update their custom IDs  
+  - Updates list should contain dicts with:  
+    - Either `fileKey` or `customId` (one is required)  
+    - `newName` (required)  
+  - Returns rename operation result  
+
 - `get_usage_info() -> UsageInfoResponse`
   - Get account usage statistics
   - Returns usage information
@@ -160,6 +189,9 @@ All response models are defined in `upyloadthing/schemas.py`:
 - `ListFileResponse` - File listing result containing:
   - `has_more: bool`
   - `files: List[FileData]`
+- `RenameFilesResponse` - File rename result containing:
+  - `success: bool`
+  - `renamed_count: int`
 - `UsageInfoResponse` - Usage statistics containing:
   - `total_bytes: int`
   - `app_total_bytes: int`

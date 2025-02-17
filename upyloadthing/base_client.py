@@ -13,6 +13,7 @@ from upyloadthing.presign import make_presigned_url
 from upyloadthing.schemas import (
     DeleteFileResponse,
     ListFileResponse,
+    RenameFilesResponse,
     UploadResult,
     UsageInfoResponse,
     UTApiOptions,
@@ -141,6 +142,22 @@ class BaseUTApi(ABC):
         """
         pass
 
+    @abstractmethod
+    def rename_files(
+        self, updates: List[dict[str, str]]
+    ) -> RenameFilesResponse | Coroutine[Any, Any, RenameFilesResponse]:
+        """Rename one or more files.
+
+        Args:
+            updates: List of update objects containing either:
+                    - fileKey and newName
+                    - customId and newName
+
+        Returns:
+            Rename operation response or coroutine
+        """
+        pass
+
     def _prepare_file_data(
         self, file: BinaryIO, content_disposition: str, acl: str | None
     ) -> dict:
@@ -239,4 +256,3 @@ class BaseUTApi(ABC):
         raise httpx.HTTPStatusError(
             error_msg, request=e.request, response=e.response
         ) from e
-

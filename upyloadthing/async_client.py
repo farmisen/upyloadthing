@@ -7,6 +7,7 @@ from upyloadthing.base_client import BaseUTApi
 from upyloadthing.schemas import (
     DeleteFileResponse,
     ListFileResponse,
+    RenameFilesResponse,
     UploadResult,
     UsageInfoResponse,
 )
@@ -174,3 +175,21 @@ class AsyncUTApi(BaseUTApi):
         """
         result = await self._request("POST", "/v6/getUsageInfo")
         return UsageInfoResponse(**result)
+
+    async def rename_files(
+        self, updates: List[dict[str, str]]
+    ) -> RenameFilesResponse:
+        """Rename one or more files asynchronously.
+
+        Args:
+            updates: List of update objects containing either:
+                    - fileKey and newName
+                    - customId and newName
+
+        Returns:
+            RenameFilesResponse: Response containing rename results
+        """
+        result = await self._request(
+            "POST", "/v6/renameFiles", {"updates": updates}
+        )
+        return RenameFilesResponse(**result)
