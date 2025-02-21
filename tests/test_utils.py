@@ -51,6 +51,7 @@ def test_snakify_non_dict_types():
     assert snakify(None) is None
     assert snakify(42) == 42
     assert snakify("someString") == "someString"
+    assert snakify("limitBytes") == "limitBytes"
     assert snakify(True) is True
     assert snakify([1, 2, 3]) == [1, 2, 3]
 
@@ -60,3 +61,20 @@ def test_snakify_empty_structures():
     assert snakify({}) == {}
     assert snakify([]) == []
     assert snakify([{}]) == [{}]
+
+
+def test_snakify_dict_other():
+    """Test dictionary key conversion."""
+    input_dict = {
+        "totalBytes": 1024,
+        "appTotalBytes": 2048,
+        "filesUploaded": 10,
+        "limitBytes": 5000000,
+    }
+    expected = {
+        "total_bytes": 1024,
+        "app_total_bytes": 2048,
+        "files_uploaded": 10,
+        "limit_bytes": 5000000,
+    }
+    assert snakify(input_dict) == expected

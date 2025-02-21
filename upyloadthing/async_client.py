@@ -8,6 +8,7 @@ from upyloadthing.schemas import (
     DeleteFileResponse,
     ListFileResponse,
     RenameFilesResponse,
+    UpdateACLResponse,
     UploadResult,
     UsageInfoResponse,
 )
@@ -193,3 +194,23 @@ class AsyncUTApi(BaseUTApi):
             "POST", "/v6/renameFiles", {"updates": updates}
         )
         return RenameFilesResponse(**result)
+
+    async def update_acl(
+        self, updates: List[dict[str, str]]
+    ) -> UpdateACLResponse:
+        """Update ACL settings for one or more files asynchronously.
+
+        Args:
+            updates: List of update objects containing either:
+                    - fileKey and acl
+                    - customId and acl
+                    where acl must be a valid ACLValue
+
+        Returns:
+            UpdateACLResponse: Response containing update results
+        """
+        self._validate_acl_updates(updates)
+        result = await self._request(
+            "POST", "/v6/updateACL", {"updates": updates}
+        )
+        return UpdateACLResponse(**result)

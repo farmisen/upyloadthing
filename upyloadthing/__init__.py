@@ -1,10 +1,12 @@
 from upyloadthing.async_client import AsyncUTApi
 from upyloadthing.client import UTApi
 from upyloadthing.schemas import (
+    ACLValue,
     DeleteFileResponse,
     FileData,
     ListFileResponse,
     RenameFilesResponse,
+    UpdateACLResponse,
     UploadResult,
     UsageInfoResponse,
     UTApiOptions,
@@ -16,10 +18,12 @@ __all__ = [
     "UTApi",
     "UTApiOptions",
     "UTtoken",
+    "ACLValue",
     "FileData",
     "ListFileResponse",
     "RenameFilesResponse",
     "DeleteFileResponse",
     "UsageInfoResponse",
     "UploadResult",
+    "UpdateACLResponse",
 ]

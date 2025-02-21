@@ -7,9 +7,11 @@ import pytest
 import respx
 
 from upyloadthing import (
+    ACLValue,
     DeleteFileResponse,
     ListFileResponse,
     RenameFilesResponse,
+    UpdateACLResponse,
     UploadResult,
     UsageInfoResponse,
     UTApi,
@@ -202,7 +204,7 @@ def test_upload_multiple_files_with_custom_disposition(
 @respx.mock()
 def test_delete_files(respx_mock: respx.MockRouter, ut_api):
     """Test file deletion."""
-    delete_response = {"success": True, "deleted_count": 1}
+    delete_response = {"success": True, "deletedCount": 1}
 
     respx_mock.post(f"{API_URL}/v6/deleteFiles").mock(
         return_value=httpx.Response(200, json=delete_response)
@@ -228,7 +230,7 @@ def test_list_files(respx_mock: respx.MockRouter, ut_api):
                 "name": "test.jpg",
                 "status": "ready",
                 "size": 1024,
-                "uploaded_at": 1704067200,
+                "uploadedAt": 1704067200,
             }
         ],
     }
@@ -249,10 +251,10 @@ def test_list_files(respx_mock: respx.MockRouter, ut_api):
 def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
     """Test usage info retrieval."""
     usage_response = {
-        "total_bytes": 1024,
-        "app_total_bytes": 2048,
-        "files_uploaded": 10,
-        "limit_bytes": 5000000,
+        "totalBytes": 1024,
+        "appTotalBytes": 2048,
+        "filesUploaded": 10,
+        "limitBytes": 5000000,
     }
 
     respx_mock.post(f"{API_URL}/v6/getUsageInfo").mock(
@@ -270,7 +272,7 @@ def test_get_usage_info(respx_mock: respx.MockRouter, ut_api):
 @respx.mock()
 def test_rename_files(respx_mock: respx.MockRouter, ut_api):
     """Test renaming files with new names."""
-    rename_response = {"success": True, "renamed_count": 2}
+    rename_response = {"success": True, "renamedCount": 2}
 
     respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
         return_value=httpx.Response(200, json=rename_response)
@@ -289,7 +291,7 @@ def test_rename_files(respx_mock: respx.MockRouter, ut_api):
 @respx.mock()
 def test_rename_files_with_custom_id(respx_mock: respx.MockRouter, ut_api):
     """Test renaming files with custom IDs."""
-    rename_response = {"success": True, "renamed_count": 2}
+    rename_response = {"success": True, "renamedCount": 2}
 
     respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
         return_value=httpx.Response(200, json=rename_response)
@@ -308,7 +310,7 @@ def test_rename_files_with_custom_id(respx_mock: respx.MockRouter, ut_api):
 @respx.mock()
 def test_rename_files_mixed_updates(respx_mock: respx.MockRouter, ut_api):
     """Test renaming files with mixed update types (both new names and custom IDs)."""  # noqa: E501
-    rename_response = {"success": True, "renamed_count": 2}
+    rename_response = {"success": True, "renamedCount": 2}
 
     respx_mock.post(f"{API_URL}/v6/renameFiles").mock(
         return_value=httpx.Response(200, json=rename_response)
@@ -348,3 +350,118 @@ def test_request_with_different_content_types(
 
     result = ut_api._request("POST", "/test-json", {"data": "test"})
     assert result == {"key": "value"}
+
+
+@respx.mock
+def test_update_acl(respx_mock: respx.MockRouter, ut_api):
+    """Test updating ACL settings with file keys."""
+    acl_response = {"success": True, "updatedCount": 2}
+
+    respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(200, json=acl_response)
+    )
+
+    updates = [
+        {"fileKey": "file_key_1", "acl": ACLValue.PRIVATE.value},
+        {"fileKey": "file_key_2", "acl": ACLValue.PUBLIC_READ.value},
+    ]
+
+    result = ut_api.update_acl(updates)
+    assert isinstance(result, UpdateACLResponse)
+    assert result.success is True
+    assert result.updated_count == 2
+
+
+@respx.mock
+def test_update_acl_with_custom_id(respx_mock: respx.MockRouter, ut_api):
+    """Test updating ACL settings with custom IDs."""
+    acl_response = {"success": True, "updatedCount": 2}
+
+    respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(200, json=acl_response)
+    )
+
+    updates = [
+        {"customId": "custom_123", "acl": ACLValue.PRIVATE.value},
+        {"customId": "custom_456", "acl": ACLValue.PUBLIC_READ.value},
+    ]
+
+    result = ut_api.update_acl(updates)
+    assert isinstance(result, UpdateACLResponse)
+    assert result.success is True
+    assert result.updated_count == 2
+
+
+@respx.mock
+def test_update_acl_mixed_updates(respx_mock: respx.MockRouter, ut_api):
+    """Test updating ACL settings with mixed update types."""
+    acl_response = {"success": True, "updatedCount": 2}
+
+    respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(200, json=acl_response)
+    )
+
+    updates = [
+        {"fileKey": "file_key_123", "acl": ACLValue.PRIVATE.value},
+        {"customId": "custom_456", "acl": ACLValue.PUBLIC_READ.value},
+    ]
+
+    result = ut_api.update_acl(updates)
+    assert isinstance(result, UpdateACLResponse)
+    assert result.success is True
+    assert result.updated_count == 2
+
+
+@respx.mock
+def test_update_acl_with_invalid_acl(respx_mock: respx.MockRouter, ut_api):
+    """Test updating ACL settings with invalid ACL value."""
+    updates = [
+        {"fileKey": "file_key_1", "acl": "invalid-acl"},
+    ]
+
+    mock_post = respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(400, json={"success": False})
+    )
+
+    with pytest.raises(
+        ValueError, match="ACL must be one of: 'public-read', 'private'"
+    ):
+        ut_api.update_acl(updates)
+    assert not mock_post.called
+
+
+@respx.mock
+def test_update_acl_with_missing_acl(respx_mock: respx.MockRouter, ut_api):
+    """Test updating ACL settings with missing ACL field."""
+    updates = [
+        {"fileKey": "file_key_1"},  # Missing acl field
+    ]
+
+    mock_post = respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(400, json={"success": False})
+    )
+
+    with pytest.raises(ValueError, match="Missing 'acl' in update"):
+        ut_api.update_acl(updates)
+    assert not mock_post.called
+
+
+@respx.mock
+def test_update_acl_with_missing_identifier(
+    respx_mock: respx.MockRouter, ut_api
+):
+    """Test updating ACL settings with missing identifier."""
+    updates = [
+        {"acl": ACLValue.PUBLIC_READ.value},  # Missing fileKey/customId
+    ]
+
+    mock_post = respx_mock.post(f"{API_URL}/v6/updateACL").mock(
+        return_value=httpx.Response(400, json={"success": False})
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Each update must contain either 'fileKey' or 'customId'",
+    ):
+        ut_api.update_acl(updates)
+    assert not mock_post.called

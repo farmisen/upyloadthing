@@ -11,6 +11,7 @@ import httpx
 from upyloadthing.file_key import generate_key
 from upyloadthing.presign import make_presigned_url
 from upyloadthing.schemas import (
+    ACLValue,
     DeleteFileResponse,
     ListFileResponse,
     RenameFilesResponse,
@@ -256,3 +257,30 @@ class BaseUTApi(ABC):
         raise httpx.HTTPStatusError(
             error_msg, request=e.request, response=e.response
         ) from e
+
+    def _validate_acl_updates(self, updates: List[dict[str, str]]) -> None:
+        """Validate ACL update requests.
+
+        Args:
+            updates: List of update objects containing ACL changes
+
+        Raises:
+            ValueError: If any ACL value is invalid or required fields
+            are missing
+        """
+        for update in updates:
+            # Check for required identifier
+            if not any(key in update for key in ["fileKey", "customId"]):
+                raise ValueError(
+                    "Each update must contain either 'fileKey' or 'customId'"
+                )
+
+            # Check for ACL value
+            if "acl" not in update:
+                raise ValueError("Missing 'acl' in update")
+            try:
+                ACLValue(update["acl"])  # Validate enum value
+            except ValueError as e:
+                raise ValueError(
+                    f"ACL must be one of: {', '.join(f"'{v.value}'" for v in ACLValue)}"  # noqa: E501
+                ) from e
