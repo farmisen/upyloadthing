@@ -70,6 +70,17 @@ def main():
         print(f"Found: {actual_names}")
     print()
 
+    # Update ACL test
+    print("🔒 Updating ACL settings...")
+    acl_updates = [
+        {"fileKey": upload_results[0].file_key, "acl": "public-read"},
+        {"fileKey": upload_results[1].file_key, "acl": "public-read"},
+    ]
+    acl_result = api.update_acl(acl_updates)
+    print(f"Updated ACL for {len(acl_updates)} files")
+    print(f"Success: {acl_result.success}")
+    print(f"Updated count: {acl_result.updated_count}\n")
+
     # Delete the uploaded files
     print("🗑️ Deleting test files...")
     file_keys = [result.file_key for result in upload_results]

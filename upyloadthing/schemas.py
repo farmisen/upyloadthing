@@ -1,6 +1,12 @@
+from enum import Enum
 from typing import Dict, List
 
 from pydantic import BaseModel
+
+
+class ACLValue(Enum):
+    PUBLIC_READ = "public-read"
+    PRIVATE = "private"
 
 
 class UTApiOptions(BaseModel):
@@ -46,6 +52,11 @@ class UsageInfoResponse(BaseModel):
     limit_bytes: int
 
 
+class UpdateACLResponse(BaseModel):
+    success: bool
+    updated_count: int
+
+
 class UploadResult(BaseModel):
     file_key: str
     name: str
@@ -56,3 +67,4 @@ class UploadResult(BaseModel):
     app_url: str
     file_hash: str
     server_data: Dict | None = None
+    acl: ACLValue | None = None

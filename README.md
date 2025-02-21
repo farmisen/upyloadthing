@@ -82,6 +82,28 @@ response = api.rename_files([
 ])
 ```
 
+### Update ACL Settings
+
+```python
+# Update ACL for specific files using file keys
+response = api.update_acl([
+    {"fileKey": "file_key_123", "acl": "private"},
+    {"fileKey": "file_key_456", "acl": "public-read"}
+])
+
+# Update ACL using custom IDs
+response = api.update_acl([
+    {"customId": "custom_123", "acl": "private"},
+    {"customId": "custom_456", "acl": "public-read"}
+])
+
+# Mix of file keys and custom IDs
+response = api.update_acl([
+    {"fileKey": "file_key_123", "acl": "private"},
+    {"customId": "custom_456", "acl": "public-read"}
+])
+```
+
 ### List Files
 
 ```python
@@ -165,6 +187,13 @@ Both clients provide these methods:
     - `newName` (required)  
   - Returns rename operation result  
 
+- `update_acl(updates: List[dict[str, str]]) -> UpdateACLResponse`
+  - Update ACL settings for one or more files
+  - Updates list should contain dicts with:
+    - Either `fileKey` or `customId` (one is required)
+    - `acl` (required, either 'public-read' or 'private')
+  - Returns ACL update operation result
+
 - `get_usage_info() -> UsageInfoResponse`
   - Get account usage statistics
   - Returns usage information
@@ -192,6 +221,9 @@ All response models are defined in `upyloadthing/schemas.py`:
 - `RenameFilesResponse` - File rename result containing:
   - `success: bool`
   - `renamed_count: int`
+- `UpdateACLResponse` - ACL update result containing:
+  - `success: bool`
+  - `updated_count: int`
 - `UsageInfoResponse` - Usage statistics containing:
   - `total_bytes: int`
   - `app_total_bytes: int`
